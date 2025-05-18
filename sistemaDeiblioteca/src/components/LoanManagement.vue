@@ -36,7 +36,7 @@
     </div>
 
 
-    <hr />
+  <hr />
 
     <div class="active-loans-section">
       <h3>Préstamos Activos</h3>
@@ -68,8 +68,32 @@
       <p v-else>No hay préstamos activos {{ isAdminLoggedIn ? '' : 'para tu usuario' }}.</p>
     </div>
 
-    <hr />
-
+  <hr />
+    <div class="active-reservations-section">
+  <h3>Reservas Activas</h3>
+  <table v-if="activeReservations.length > 0">
+    <thead>
+      <tr>
+        <th>Libro</th>
+        <th>Usuario</th>
+        <th>Fecha Reserva</th>
+        <th v-if="isAdminLoggedIn">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr v-for="reservation in activeReservations" :key="reservation.id">
+        <td>{{ reservation.bookTitle || getBookTitle(reservation.bookId) }}</td>
+        <td>{{ reservation.userName || getUserName(reservation.userId) }}</td>
+        <td>{{ formatDate(reservation.reservationDate) }}</td>
+        <td v-if="isAdminLoggedIn">
+        
+          <button @click="handleCancelReservation(reservation.id)">Cancelar Reserva</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <p v-else>No hay reservas activas.</p>
+</div>
     <div class="returned-loans-section">
       <h3>Historial de Préstamos (Devueltos)</h3>
        <div v-if="!isAdminLoggedIn && returnedLoansForCurrentUser.length > 0">
@@ -103,30 +127,40 @@
 <script>
 export default {
   name: 'LoanManagement',
-  props: { // Recibir la prop
+  props: {
     isAdminLoggedIn: {
       type: Boolean,
       default: false
     }
-    // Podríamos pasar el ID del usuario "logueado" si no es admin para filtrar sus préstamos
-    // currentUserId: { type: String, default: null } // Ejemplo
+    // currentUserId: { type: String, default: null } // Ejemplo si necesitaras el ID del usuario normal
   },
   data() {
     return {
-      loans: [], users: [], books: [],
-      newLoan: { userId: '', bookId: '', dueDate: this.getDefaultDueDate() },
-      nextLoanIdCounter: 1,
+      loans: [],
+      users: [],
+      books: [],
+      newLoan: { 
+        userId: '', 
+        bookId: '', 
+        dueDate: this.getDefaultDueDate() 
+      },
+      nextLoanIdCounter: 1, 
+      reservations: [],
+      // nextReservationIdCounter: 1, // No es necesario si generamos IDs de reserva con Date.now()
       localStorageKeys: {
         users: 'biblioteca_users',
         books: 'biblioteca_books_vue_project',
-        loans: 'biblioteca_loans_vue_project'
+        loans: 'biblioteca_loans_vue_project',
+        reservations: 'biblioteca_reservations_vue_project'
       }
     };
   },
   computed: {
     availableUsersForLoan() {
-      // Solo usuarios no bloqueados pueden tomar préstamos
       return this.users.filter(user => !user.isBlocked);
+    },
+    activeReservations() {
+      return this.reservations.filter(res => res.status === 'activa');
     },
     availableBooksForLoan() {
       return this.books.filter(book => book.availableCopies > 0);
@@ -137,41 +171,50 @@ export default {
     allReturnedLoans() {
       return this.loans.filter(loan => loan.status === 'devuelto');
     },
-    // --- Lógica para mostrar préstamos si el usuario no es admin (necesitaría currentUserId) ---
-    // Esto es un ejemplo, necesitaríamos saber el ID del usuario "normal" logueado.
-    // Por ahora, asumimos que si no es admin, no ve la lista o ve una vacía hasta implementar login de usuario normal.
-    activeLoansForCurrentUser() {
-      // if (this.currentUserId && !this.isAdminLoggedIn) {
-      //  return this.allActiveLoans.filter(loan => loan.userId === this.currentUserId);
-      // }
-      return []; // Por defecto, si no hay un usuario normal logueado identificado
+    activeLoansForCurrentUser() { // Ejemplo, necesitaría currentUserId
+      return []; 
     },
-    returnedLoansForCurrentUser() {
-      // if (this.currentUserId && !this.isAdminLoggedIn) {
-      //  return this.allReturnedLoans.filter(loan => loan.userId === this.currentUserId);
-      // }
+    returnedLoansForCurrentUser() { // Ejemplo, necesitaría currentUserId
       return [];
     },
     loansToDisplay() {
       if (this.isAdminLoggedIn) {
         return { active: this.allActiveLoans, returned: this.allReturnedLoans };
       }
-      // Si no es admin, necesitaríamos un `currentUserId` para mostrar solo sus préstamos.
-      // Por ahora, para simplificar y dado que no tenemos login de usuario normal,
-      // mostraremos listas vacías o un mensaje. El formulario de registro se oculta.
       return { active: this.activeLoansForCurrentUser, returned: this.returnedLoansForCurrentUser };
     }
   },
-  methods: {
-    getDefaultDueDate() { /* ...tu código... */ const today = new Date(); today.setDate(today.getDate() + 7); return today.toISOString().split('T')[0]; },
-    formatDate(dateString) { /* ...tu código... */ if (!dateString) return 'N/A'; const date = new Date(dateString); return date.toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' }); },
-    loadDataFromLocalStorage() {
-      const storedUsers = localStorage.getItem(this.localStorageKeys.users);
-      if (storedUsers) this.users = JSON.parse(storedUsers).map(u => ({...u, isBlocked: u.isBlocked || false})); else this.users = [];
+  methods: { // INICIO DEL BLOQUE DE MÉTODOS
+    getDefaultDueDate() {
+      const today = new Date();
+      today.setDate(today.getDate() + 7);
+      return today.toISOString().split('T')[0];
+    },
 
+    formatDate(dateString) {
+      if (!dateString) return 'N/A';
+      const date = new Date(dateString);
+      return date.toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
+    },
+
+    loadDataFromLocalStorage() {
+      console.log('LoanManagement: Cargando datos desde localStorage...');
+      // Cargar Usuarios
+      const storedUsers = localStorage.getItem(this.localStorageKeys.users);
+      if (storedUsers) {
+        try {
+          this.users = JSON.parse(storedUsers).map(u => ({ ...u, isBlocked: u.isBlocked || false }));
+        } catch (e) { console.error('Error parseando usuarios:', e); this.users = []; }
+      } else { this.users = []; }
+
+      // Cargar Libros
       const storedBooks = localStorage.getItem(this.localStorageKeys.books);
-      if (storedBooks) this.books = JSON.parse(storedBooks); else this.books = [];
+      if (storedBooks) {
+        try { this.books = JSON.parse(storedBooks); }
+        catch (e) { console.error('Error parseando libros:', e); this.books = []; }
+      } else { this.books = []; }
       
+      // Cargar Préstamos
       const storedLoans = localStorage.getItem(this.localStorageKeys.loans);
       if (storedLoans) {
         try {
@@ -185,13 +228,40 @@ export default {
           } else { this.nextLoanIdCounter = 1; }
         } catch (e) { console.error('Error parseando préstamos:', e); this.loans = []; this.nextLoanIdCounter = 1; }
       } else { this.loans = []; this.nextLoanIdCounter = 1; }
+
+      // Cargar Reservas
+      const storedReservations = localStorage.getItem(this.localStorageKeys.reservations);
+      if (storedReservations) {
+        try { this.reservations = JSON.parse(storedReservations); }
+        catch (e) { console.error('Error parseando reservaciones:', e); this.reservations = []; }
+      } else { this.reservations = []; }
+      console.log('LoanManagement: Datos cargados.');
     },
-    saveDataToLocalStorage() { /* ...tu código... */ localStorage.setItem(this.localStorageKeys.books, JSON.stringify(this.books)); localStorage.setItem(this.localStorageKeys.loans, JSON.stringify(this.loans)); },
-    generateLoanId() { return 'ln' + this.nextLoanIdCounter++; },
-    getBookTitle(bookId) { /* ...tu código... */ const book = this.books.find(b => b.id === bookId); return book ? book.title : 'Libro Desconocido'; },
-    getUserName(userId) { /* ...tu código... */ const user = this.users.find(u => u.id === userId); return user ? user.name : 'Usuario Desconocido'; },
+
+    saveDataToLocalStorage() {
+      localStorage.setItem(this.localStorageKeys.users, JSON.stringify(this.users));
+      localStorage.setItem(this.localStorageKeys.books, JSON.stringify(this.books));
+      localStorage.setItem(this.localStorageKeys.loans, JSON.stringify(this.loans));
+      localStorage.setItem(this.localStorageKeys.reservations, JSON.stringify(this.reservations));
+      console.log('LoanManagement: Datos guardados en localStorage.');
+    },
+
+    generateLoanId() {
+      return 'ln' + this.nextLoanIdCounter++;
+    },
+
+    getBookTitle(bookId) {
+      const book = this.books.find(b => b.id === bookId);
+      return book ? book.title : 'Libro Desconocido';
+    },
+
+    getUserName(userId) {
+      const user = this.users.find(u => u.id === userId);
+      return user ? user.name : 'Usuario Desconocido';
+    },
+
     handleRegisterLoan() {
-      if (!this.isAdminLoggedIn) { alert("Solo administradores pueden registrar préstamos directamente aquí."); return; } // Ajustar si usuarios normales pueden prestar
+      if (!this.isAdminLoggedIn) { alert("Solo administradores pueden registrar préstamos."); return; }
       if (!this.newLoan.userId || !this.newLoan.bookId || !this.newLoan.dueDate) {
         alert('Por favor, complete todos los campos para el préstamo.'); return;
       }
@@ -203,26 +273,53 @@ export default {
       if (bookIndex === -1 || this.books[bookIndex].availableCopies <= 0) {
         alert('El libro seleccionado no está disponible o no existe.'); return;
       }
-      const loan = { id: this.generateLoanId(), userId: this.newLoan.userId, bookId: this.newLoan.bookId, loanDate: new Date().toISOString().split('T')[0], dueDate: this.newLoan.dueDate, returnDate: null, status: 'activo' };
+      const loan = { 
+        id: this.generateLoanId(), 
+        userId: this.newLoan.userId, 
+        bookId: this.newLoan.bookId, 
+        loanDate: new Date().toISOString().split('T')[0], 
+        dueDate: this.newLoan.dueDate, 
+        returnDate: null, 
+        status: 'activo' 
+      };
       this.loans.push(loan);
       this.books[bookIndex].availableCopies--;
       this.saveDataToLocalStorage();
       alert('Préstamo registrado exitosamente!');
       this.newLoan = { userId: '', bookId: '', dueDate: this.getDefaultDueDate() };
     },
+
     handleReturnBook(loanId) {
-      if (!this.isAdminLoggedIn) { alert("Solo administradores pueden gestionar devoluciones directamente aquí."); return; } // Ajustar
+      if (!this.isAdminLoggedIn) { alert("Solo administradores pueden gestionar devoluciones."); return; }
       const loanIndex = this.loans.findIndex(l => l.id === loanId);
       if (loanIndex === -1) { alert('Préstamo no encontrado.'); return; }
+      
       this.loans[loanIndex].status = 'devuelto';
       this.loans[loanIndex].returnDate = new Date().toISOString().split('T')[0];
+      
       const bookIndex = this.books.findIndex(b => b.id === this.loans[loanIndex].bookId);
-      if (bookIndex !== -1) { this.books[bookIndex].availableCopies++; }
+      if (bookIndex !== -1) {
+        this.books[bookIndex].availableCopies++;
+      }
       this.saveDataToLocalStorage();
       alert('Libro devuelto exitosamente!');
+    },
+
+    handleCancelReservation(reservationId) {
+      if (!this.isAdminLoggedIn) {
+        alert("Solo administradores pueden cancelar reservas."); return;
+      }
+      if (confirm("¿Está seguro de que desea cancelar esta reserva?")) {
+        this.reservations = this.reservations.filter(res => res.id !== reservationId);
+        this.saveDataToLocalStorage();
+        alert("Reserva cancelada.");
+      }
     }
-  },
-  created() { this.loadDataFromLocalStorage(); this.newLoan.dueDate = this.getDefaultDueDate(); }
+  }, // FIN DEL BLOQUE DE MÉTODOS
+  created() { 
+    this.loadDataFromLocalStorage(); 
+    this.newLoan.dueDate = this.getDefaultDueDate(); 
+  }
 };
 </script>
 

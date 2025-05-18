@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+<div id="app">
     <header>
       <h1>Mi Biblioteca Digital</h1>
       <div class="auth-controls">
@@ -10,7 +10,7 @@
       <nav>
         <button @click="currentView = 'dashboard'">Panel Administrativo</button>
         <button @click="currentView = 'users'">Gestión de Usuarios</button>
-        <button @click="currentView = 'catalog'">Catálogo</button>
+        <button @click="currentView = 'catalog'; console.log('currentView ahora es:', currentView)">Catálogo</button>
         <button @click="currentView = 'loans'">Gestión de Préstamos</button>
       </nav>
     </header>
@@ -28,9 +28,9 @@
         :is-admin-logged-in="isAdminLoggedIn"
       />
       <CatalogView
-        v-if="currentView === 'catalog'"
-        :is-admin-logged-in="isAdminLoggedIn"
-      />
+      v-if="currentView === 'catalog'"
+      :is-admin-logged-in="isAdminLoggedIn"
+/>      />
       <LoanManagement
         v-if="currentView === 'loans'"
         :is-admin-logged-in="isAdminLoggedIn"
