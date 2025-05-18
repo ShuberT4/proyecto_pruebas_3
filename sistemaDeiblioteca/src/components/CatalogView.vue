@@ -1,11 +1,11 @@
-<template>
+
   <template>
-  <div class="catalog-management"> {/* INICIO DEL DIV PRINCIPAL */}
+  <div class="catalog-management"> 
     <h2>Catálogo de Recursos</h2>
 
-    {/* MODAL DE RESERVA - AHORA CON ESTRUCTURA CORRECTA */}
+   
     <div v-if="showReserveModal" class="modal-overlay">
-      <div class="modal-content"> {/* Contenedor interno del modal */}
+      <div class="modal-content"> 
         <h3>Reservar Libro: {{ bookToReserve?.title }}</h3>
         <p v-if="bookToReserve">Este libro ({{ bookToReserve.title }}) no tiene copias disponibles actualmente.</p>
         <div>
@@ -23,9 +23,7 @@
         </div>
       </div>
     </div>
-    {/* FIN DEL MODAL DE RESERVA */}
-
-    {/* FORMULARIO DE LIBROS (CRUD) */}
+  
     <div class="book-form-section" v-if="isAdminLoggedIn">
       <h3>{{ editingBook ? 'Editar Libro' : 'Añadir Nuevo Libro' }}</h3>
       <form @submit.prevent="handleSubmitBook">
@@ -43,10 +41,7 @@
     <div v-else class="admin-only-message">
         <p><em>La adición y edición de libros está restringida a administradores.</em></p>
     </div>
-
     <hr />
-
-    {/* FILTROS */}
     <div class="filters">
       <input type="text" v-model="searchTerm" placeholder="Buscar por título, autor, ISBN..." />
       <select v-model="selectedGenre">
@@ -54,12 +49,8 @@
         <option v-for="genreValue in uniqueGenres" :key="genreValue" :value="genreValue">{{ genreValue }}</option>
       </select>
     </div>
-
-    {/* LISTA DE LIBROS */}
     <div class="book-list">
-      <div v-if="filteredBooks.length === 0" class="no-books">
-        No se encontraron libros con los criterios seleccionados.
-      </div>
+      <div v-if="filteredBooks.length === 0" class="no-books"></div>
       <div v-for="book in filteredBooks" :key="book.id" class="book-item">
         <img :src="book.coverImage || defaultCoverImage" :alt="book.title" class="book-cover-placeholder" />
         <h3>{{ book.title }}</h3>
@@ -71,20 +62,16 @@
         <div class="book-actions">
           <button v-if="isAdminLoggedIn" @click="prepareEditBook(book)">Editar</button>
           <button v-if="isAdminLoggedIn" @click="removeBook(book.id)">Eliminar</button>
-          {/* Botón de Reserva */}
+        
           <button
             v-if="isAdminLoggedIn && book.availableCopies === 0"
             @click="openReserveModal(book)"
-            class="reserve-button"
-          >
-            Reservar
-          </button>
+            class="reserve-button">Boton Reserva</button>
         </div>
       </div>
     </div>
 
-  </div> {/* CIERRE DEL DIV PRINCIPAL 'catalog-management' */}
-</template>
+  </div> 
 </template>
 
 <script>
@@ -97,26 +84,27 @@ export default {
     }
   },
   data() {
-  return {
-    books: [],
-    currentBook: { id: null, title: '', author: '', isbn: '', genre: '', description: '', coverImage: '', totalCopies: 0, availableCopies: 0 },
-    editingBook: null,
-    nextBookIdCounter: 1,
-    searchTerm: '',
-    selectedGenre: '',
-    defaultCoverImage: 'https://placehold.co/150x220/cccccc/969696?text=Libro', // Coma añadida
+    return {
+      books: [],
+      currentBook: { id: null, title: '', author: '', isbn: '', genre: '', description: '', coverImage: '', totalCopies: 0, availableCopies: 0 },
+      editingBook: null,
+      nextBookIdCounter: 1,
+      searchTerm: '',
+      selectedGenre: '',
+      defaultCoverImage: 'https://placehold.co/150x220/cccccc/969696?text=Libro',
 
-    // Para Reservas
-    users: [], // Corregido de user[] a users: [], y con coma
-    showReserveModal: false, // Corregido el typo (era showReseveModal) y con coma
-    bookToReserve: null,     // Coma añadida
-    selectedUserIdForReservation: '', // Coma añadida
-    
-    // Claves de LocalStorage (asegúrate de que estén todas las que necesitas)
-    localStorageUserKey: 'biblioteca_users', // Añadida si la usas en loadUsersForReservation
-    localStorageReservationsKey: 'biblioteca_reservations_vue_project'
-  };
-},
+      // Para Reservas
+      users: [],
+      showReserveModal: false,
+      bookToReserve: null,
+      selectedUserIdForReservation: '',
+      
+      // Claves de LocalStorage
+      localStorageUserKey: 'biblioteca_users',
+      localStorageBooksKey: 'biblioteca_books_vue_project', // Coincide con el watch
+      localStorageReservationsKey: 'biblioteca_reservations_vue_project'
+    };
+  },
   computed: {
     uniqueGenres() {
       const genres = this.books.map(book => book.genre).filter(genre => genre);
@@ -138,73 +126,75 @@ export default {
       return filtered;
     }
   },
-  methods: {
-    generateBookId() { return 'b' + this.nextBookIdCounter++; },
-     loadUsersForReservation() { // Cargar usuarios para el selector
-    const storedUsers = localStorage.getItem(this.localStorageUserKey);
-    if (storedUsers) {
-      this.users = JSON.parse(storedUsers).filter(user => !user.isBlocked); // Opcional: no permitir reservar a bloqueados
-    } else {
-      this.users = [];
-    }
-  },
-  openReserveModal(book) {
-    if (!this.isAdminLoggedIn) return;
-    this.loadUsersForReservation(); // Cargar/actualizar lista de usuarios
-    this.bookToReserve = book;
-    this.selectedUserIdForReservation = ''; // Resetear selección
-    this.showReserveModal = true;
-  },
-   closeReserveModal() {
-    this.showReserveModal = false;
-    this.bookToReserve = null;
-    this.selectedUserIdForReservation = '';
-  },
+  methods: { // TODOS LOS MÉTODOS VAN AQUÍ DENTRO
+    generateBookId() { 
+      return 'b' + this.nextBookIdCounter++; 
+    },
+
+    loadUsersForReservation() {
+      const storedUsers = localStorage.getItem(this.localStorageUserKey);
+      if (storedUsers) {
+        try {
+          this.users = JSON.parse(storedUsers).filter(user => !user.isBlocked);
+        } catch(e) {
+          console.error("Error parseando usuarios para reserva:", e);
+          this.users = [];
+        }
+      } else {
+        this.users = [];
+      }
+    },
+
+    openReserveModal(book) {
+      if (!this.isAdminLoggedIn) return;
+      this.loadUsersForReservation();
+      this.bookToReserve = book;
+      this.selectedUserIdForReservation = '';
+      this.showReserveModal = true;
+    },
+
+    closeReserveModal() {
+      this.showReserveModal = false;
+      this.bookToReserve = null;
+      this.selectedUserIdForReservation = '';
+    },
+
     confirmReservation() {
-    if (!this.selectedUserIdForReservation || !this.bookToReserve) {
-      alert("Por favor, seleccione un usuario para la reserva.");
-      return;
-    }
+      if (!this.selectedUserIdForReservation || !this.bookToReserve) {
+        alert("Por favor, seleccione un usuario para la reserva.");
+        return;
+      }
 
-    let reservations = JSON.parse(localStorage.getItem(this.localStorageReservationsKey)) || [];
-    
-    // Opcional: Verificar si el usuario ya tiene una reserva activa para este libro
-    const existingReservation = reservations.find(
-      res => res.userId === this.selectedUserIdForReservation && 
-             res.bookId === this.bookToReserve.id &&
-             res.status === 'activa'
-    );
-    if (existingReservation) {
-      alert("Este usuario ya tiene una reserva activa para este libro.");
+      let reservations = JSON.parse(localStorage.getItem(this.localStorageReservationsKey)) || [];
+      
+      const existingReservation = reservations.find(
+        res => res.userId === this.selectedUserIdForReservation && 
+               res.bookId === this.bookToReserve.id &&
+               res.status === 'activa'
+      );
+      if (existingReservation) {
+        alert("Este usuario ya tiene una reserva activa para este libro.");
+        this.closeReserveModal();
+        return;
+      }
+
+      const userForReservation = this.users.find(u => u.id === this.selectedUserIdForReservation);
+      const newReservation = {
+        id: 'r' + Date.now() + Math.random().toString(16).slice(2),
+        userId: this.selectedUserIdForReservation,
+        bookId: this.bookToReserve.id,
+        bookTitle: this.bookToReserve.title,
+        userName: userForReservation?.name || 'Desconocido',
+        reservationDate: new Date().toISOString().split('T')[0],
+        status: 'activa'
+      };
+
+      reservations.push(newReservation);
+      localStorage.setItem(this.localStorageReservationsKey, JSON.stringify(reservations));
+      
+      alert(`Reserva para "${this.bookToReserve.title}" a nombre del usuario seleccionado registrada.`);
       this.closeReserveModal();
-      return;
-    }
-
-    const newReservation = {
-      id: 'r' + Date.now() + Math.random().toString(16).slice(2), // ID único simple
-      userId: this.selectedUserIdForReservation,
-      bookId: this.bookToReserve.id,
-      bookTitle: this.bookToReserve.title, // Guardar título para fácil visualización
-      userName: this.users.find(u => u.id === this.selectedUserIdForReservation)?.name || 'Desconocido', // Guardar nombre
-      reservationDate: new Date().toISOString().split('T')[0],
-      status: 'activa' // 'activa', 'cancelada', 'completada' (cuando se convierte en préstamo)
-    };
-
-    reservations.push(newReservation);
-    localStorage.setItem(this.localStorageReservationsKey, JSON.stringify(reservations));
-    
-    alert(`Reserva para "${this.bookToReserve.title}" a nombre del usuario seleccionado registrada.`);
-    this.closeReserveModal();
-  }
-},
-
-mounted() {
-  // ... (tu carga de libros existente) ...
-  const storedBooks = localStorage.getItem('biblioteca_books_vue_project'); /* ... */
-  // Cargar usuarios también al montar si quieres que el selector esté listo siempre,
-  // o solo al abrir el modal como en openReserveModal().
-  // this.loadUsersForReservation(); 
-},
+    },
 
     handleSubmitBook() {
       if (!this.isAdminLoggedIn) { alert("Acción no permitida."); return; }
@@ -235,10 +225,13 @@ mounted() {
       }
       this.resetBookForm();
     },
+
     prepareEditBook(book) {
       if (!this.isAdminLoggedIn) return;
-      this.editingBook = { ...book }; this.currentBook = { ...book };
+      this.editingBook = { ...book }; 
+      this.currentBook = { ...book };
     },
+
     removeBook(bookId) {
       if (!this.isAdminLoggedIn) return;
       if (confirm('¿Estás seguro de que quieres eliminar este libro?')) {
@@ -246,34 +239,43 @@ mounted() {
         if (this.editingBook && this.editingBook.id === bookId) { this.resetBookForm(); }
       }
     },
+
     resetBookForm() {
       this.currentBook = { id: null, title: '', author: '', isbn: '', genre: '', description: '', coverImage: '', totalCopies: 0, availableCopies: 0 };
       this.editingBook = null;
-  },
-
+    }
+  }, // FIN DEL OBJETO methods
   mounted() {
-    const storedBooks = localStorage.getItem('biblioteca_books_vue_project');
+    const storedBooks = localStorage.getItem(this.localStorageBooksKey); // Usar la clave definida en data
     if (storedBooks) {
-      this.books = JSON.parse(storedBooks);
-      if (this.books.length > 0) {
-        const maxIdNum = this.books.reduce((max, book) => {
-            const idNum = parseInt(book.id.substring(1));
-            return !isNaN(idNum) && idNum > max ? idNum : max;
-        }, 0);
-        this.nextBookIdCounter = maxIdNum + 1;
-      } else { this.nextBookIdCounter = 1; }
+      try {
+        this.books = JSON.parse(storedBooks);
+        if (this.books.length > 0) {
+          const maxIdNum = this.books.reduce((max, book) => {
+              const idNum = parseInt(book.id.substring(1));
+              return !isNaN(idNum) && idNum > max ? idNum : max;
+          }, 0);
+          this.nextBookIdCounter = maxIdNum + 1;
+        } else { this.nextBookIdCounter = 1; }
+      } catch(e) {
+        console.error("Error parseando libros en mounted:", e);
+        this.books = []; // Fallback a lista vacía
+        this.nextBookIdCounter = 1;
+      }
     } else {
       // Datos iniciales si localStorage está vacío
-       this.books = [
+      this.books = [
         { id: this.generateBookId(), title: 'El Gran Gatsby', author: 'F. Scott Fitzgerald', isbn: '978-0743273565', genre: 'Ficción Clásica', description: 'Una historia sobre la decadencia...', coverImage: 'https://placehold.co/150x220/E8D5C4/A27B5C?text=El+Gran+Gatsby', totalCopies: 5, availableCopies: 3 },
         { id: this.generateBookId(), title: '1984', author: 'George Orwell', isbn: '978-0451524935', genre: 'Ciencia Ficción Distópica', description: 'Una visión sombría...', coverImage: 'https://placehold.co/150x220/7D7C7C/F1F1F1?text=1984', totalCopies: 3, availableCopies: 1 }
       ];
+       this.nextBookIdCounter = this.books.length + 1; // Asegurar que el contador esté bien después de los datos iniciales
     }
+    // this.loadUsersForReservation(); // Opcional: Cargar usuarios aquí si siempre quieres tenerlos listos para el modal
   },
   watch: {
     books: {
       handler(newBooks) {
-        localStorage.setItem('biblioteca_books_vue_project', JSON.stringify(newBooks));
+        localStorage.setItem(this.localStorageBooksKey, JSON.stringify(newBooks));
       },
       deep: true
     }
@@ -347,3 +349,47 @@ hr { margin-top: 30px; margin-bottom: 30px; }
 .modal-actions button:first-of-type { background-color: #28a745; color: white; }
 .modal-actions button:last-of-type { background-color: #6c757d; color: white; }
 </style>
+
+<!--
+<template>
+  <div class="catalog-test-container" style="border: 3px solid deeppink; padding: 25px; margin: 20px; background-color: #fff0f5;">
+    <h2 style="color: deeppink;">¡CATÁLOGO DE PRUEBA MÍNIMO ESTÁ AQUÍ!</h2>
+    <p>Si estás viendo este mensaje, significa que `App.vue` está mostrando correctamente el componente `CatalogView` cuando `currentView` es 'catalog'.</p>
+    <p>Propiedad `isAdminLoggedIn` recibida: <strong>{{ isAdminLoggedIn }}</strong></p>
+    <p>Mensaje desde data: <strong>{{ testMessage }}</strong></p>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'CatalogViewMinimalTest', // Un nombre diferente para evitar cualquier caché
+  props: {
+    isAdminLoggedIn: {
+      type: Boolean,
+      default: false
+    }
+  },
+  data() {
+    return {
+      testMessage: '¡Datos del catálogo de prueba funcionando!'
+    };
+  },
+  created() {
+    console.log('%c CATALOG VIEW (Prueba Mínima) - Hook CREATED ejecutado', 'color: deeppink; font-weight: bold;');
+    console.log('%c -> isAdminLoggedIn en CREATED:', 'color: deeppink;', this.isAdminLoggedIn);
+  },
+  mounted() {
+    console.log('%c CATALOG VIEW (Prueba Mínima) - Hook MOUNTED ejecutado', 'color: deeppink; font-weight: bold;');
+    console.log('%c -> testMessage en MOUNTED:', 'color: deeppink;', this.testMessage);
+  }
+};
+</script>
+
+<style scoped>
+/* Puedes dejar esta sección vacía o añadir algún estilo si quieres */
+.catalog-test-container p {
+  margin: 10px 0;
+  font-size: 1.1em;
+}
+</style>
+-->

@@ -1,7 +1,6 @@
 <template>
   <div class="user-management">
     <h2>Gestión de Usuarios</h2>
-
     <div class="user-form" v-if="isAdminLoggedIn">
       <h3>{{ editingUser ? 'Editar Usuario' : 'Añadir Nuevo Usuario' }}</h3>
       <form @submit.prevent="handleSubmitUser">
@@ -32,13 +31,11 @@
     <div v-else-if="!isAdminLoggedIn && users.length > 0" class="admin-only-message">
       <p><em>La adición y edición de usuarios está restringida a administradores.</em></p>
     </div>
-
     <hr />
-
-    <div class="user-table">
+    <div class="user-table card shadow-sm p-3 mb-4 bg-light border-0"> <h3>Lista de Usuarios</h3>
       <h3>Lista de Usuarios</h3>
-      <table border="1" style="width: 100%; border-collapse: collapse;">
-        <thead>
+       <table class="table table-striped table-hover table-bordered table-sm">
+        <thead class="table-dark">
           <tr>
             <th>ID</th>
             <th>Nombre</th>
@@ -59,9 +56,9 @@
             <td>{{ user.type }}</td>
             <td>{{ user.isBlocked ? 'Bloqueado' : 'Activo' }}</td>
             <td v-if="isAdminLoggedIn">
-              <button @click="editUser(user)">Editar</button>
-              <button @click="deleteUser(user.id)">Eliminar</button>
-              <button @click="toggleBlockUser(user.id)">
+              <button class="btn btn-warning btn-sm me-1" @click="editUser(user)">Editar</button>
+              <button class="btn btn-danger btn-sm me-1" @click="deleteUser(user.id)">Eliminar</button>
+              <button class="btn btn-info btn-sm" @click="toggleBlockUser(user.id)">
                 {{ user.isBlocked ? 'Desbloquear' : 'Bloquear' }}
               </button>
             </td>
@@ -180,21 +177,5 @@ export default {
 </script>
 
 <style scoped>
-.user-management { margin: 20px; font-family: sans-serif; }
-.admin-only-message { margin: 20px 0; padding: 10px; background-color: #fff3cd; border: 1px solid #ffeeba; color: #856404; border-radius: 3px; text-align: center; }
-.blocked-user td { color: #999; text-decoration: line-through; }
-.user-form { margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
-.user-form div { margin-bottom: 10px; }
-.user-form label { display: block; margin-bottom: 5px; font-weight: bold; }
-.user-form input[type="text"],
-.user-form input[type="email"],
-.user-form select { width: calc(100% - 22px); padding: 8px; border: 1px solid #ddd; border-radius: 3px; }
-.user-form input[type="checkbox"] { width: auto; margin-left: 5px; vertical-align: middle; }
-.user-form button { padding: 10px 15px; margin-right: 10px; background-color: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
-.user-form button[type="button"] { background-color: #6c757d; }
-.user-table table { margin-top: 10px; width:100%; border-collapse:collapse; }
-.user-table th, .user-table td { padding: 8px; text-align: left; border: 1px solid #ddd; }
-.user-table th { background-color: #f2f2f2; }
-.user-table button { margin: 0 2px; padding: 5px 8px; font-size:0.9em; }
-hr { margin-top: 30px; margin-bottom: 30px; }
+
 </style>

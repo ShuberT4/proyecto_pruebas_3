@@ -2,7 +2,7 @@
   <div class="loan-management">
     <h2>Gestión de Préstamos</h2>
 
-    <div class="loan-form-section" v-if="isAdminLoggedIn"> {/* O podrías quitar v-if si cualquier usuario puede registrar */}
+    <div class="loan-form-section" v-if="isAdminLoggedIn"> 
       <h3>Registrar Nuevo Préstamo</h3>
       <form @submit.prevent="handleRegisterLoan">
         <div>
