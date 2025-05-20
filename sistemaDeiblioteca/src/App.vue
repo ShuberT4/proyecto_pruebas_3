@@ -42,7 +42,7 @@
         </nav>
 
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-3">
-          {/* Aquí van tus componentes que se muestran condicionalmente */}
+         
           <AdminDashboard
             v-if="currentView === 'dashboard' && isAdminLoggedIn"
             @navigate-to="changeCurrentView" 
